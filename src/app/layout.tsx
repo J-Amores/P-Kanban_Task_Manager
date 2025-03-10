@@ -1,27 +1,29 @@
-import '@/styles/globals.css';
-import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import type React from "react"
+import type { Metadata } from "next"
+import { Inter } from "next/font/google"
+import "./globals.css"
+import { ThemeProvider } from "@/components/theme-provider"
 
-const inter = Inter({ subsets: ['latin'] });
+const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: 'Kanban Task Management',
-  description: 'A Kanban task management web application',
-};
+  title: "Kanban Task Manager",
+  description: "A Kanban-style task management application",
+}
 
 export default function RootLayout({
   children,
-}: {
-  children: React.ReactNode;
-}) {
+}: Readonly<{
+  children: React.ReactNode
+}>) {
   return (
-    <html lang="en">
-      <head>
-        <link rel="icon" href="/assets/favicon-32x32.png" />
-      </head>
+    <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        {children}
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+          {children}
+        </ThemeProvider>
       </body>
     </html>
-  );
-} 
+  )
+}
+

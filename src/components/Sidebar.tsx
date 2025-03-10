@@ -1,133 +1,106 @@
-'use client';
+"use client"
 
-import { useState } from 'react';
-import Image from 'next/image';
-import useStore from '@/store';
-import useTheme from '@/hooks/useTheme';
-import AddBoardModal from './modals/AddBoardModal';
+import { useState } from "react"
+import { useStore } from "@/lib/store"
+import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { LayoutDashboard, Plus, ChevronLeft, ChevronRight, Sun, Moon } from "lucide-react"
+import { Switch } from "@/components/ui/switch"
+import { useTheme } from "next-themes"
 
-export default function Sidebar() {
-  const { boards, currentBoard, setCurrentBoard, sidebarOpen, toggleSidebar } = useStore();
-  const { darkMode, toggleDarkMode } = useTheme();
-  const [showAddBoardModal, setShowAddBoardModal] = useState(false);
-  
-  if (!sidebarOpen) {
-    return (
-      <button
-        className="fixed bottom-8 left-0 bg-primary hover:bg-primary-light rounded-r-full p-5 z-10"
-        onClick={toggleSidebar}
-      >
-        <Image
-          src="/assets/icon-show-sidebar.svg"
-          alt="Show Sidebar"
-          width={16}
-          height={10}
-        />
-      </button>
-    );
+interface SidebarProps {
+  isOpen: boolean
+  toggleSidebar: () => void
+}
+
+export function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
+  const { boards, activeBoard, setActiveBoard, openCreateBoardDialog } = useStore()
+  const { theme, setTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+
+  // useEffect only runs on the client, so we need to protect against
+  // rendering the toggle with the wrong theme while the page is
+  // being server-side rendered
+  useState(() => {
+    setMounted(true)
+  })
+
+  if (!mounted) {
+    return null
   }
-  
+
   return (
-    <aside className="w-64 border-r border-light-gray/25 bg-white dark:bg-dark-gray flex flex-col h-full">
-      <div className="p-6">
-        <h2 className="text-xs uppercase tracking-widest text-light-gray mb-5">
-          All Boards ({boards.length})
-        </h2>
-        
-        <ul className="space-y-1 mb-8">
-          {boards.map(board => (
-            <li key={board.id}>
-              <button
-                className={`flex items-center w-full rounded-r-full py-3 px-6 text-left ${
-                  currentBoard?.id === board.id
-                    ? 'bg-primary text-white'
-                    : 'text-light-gray hover:bg-primary/10 hover:text-primary dark:hover:bg-white'
-                }`}
-                onClick={() => setCurrentBoard(board.id)}
-              >
-                <Image
-                  src="/assets/icon-board.svg"
-                  alt=""
-                  width={16}
-                  height={16}
-                  className="mr-3"
-                />
-                <span>{board.name}</span>
-              </button>
-            </li>
-          ))}
-          
-          <li>
-            <button
-              className="flex items-center w-full text-primary py-3 px-6 text-left"
-              onClick={() => setShowAddBoardModal(true)}
-            >
-              <Image
-                src="/assets/icon-board.svg"
-                alt=""
-                width={16}
-                height={16}
-                className="mr-3"
-              />
-              <span>+ Create New Board</span>
-            </button>
-          </li>
-        </ul>
-      </div>
-      
-      <div className="mt-auto p-6">
-        <div className="bg-very-light-gray dark:bg-dark-bg flex items-center justify-center p-3 rounded-md mb-6">
-          <Image
-            src="/assets/icon-light-theme.svg"
-            alt="Light Theme"
-            width={18}
-            height={18}
-          />
-          
-          <div className="mx-6">
-            <div className="w-10 h-5 bg-primary rounded-full relative">
-              <div 
-                className={`
-                  absolute w-3.5 h-3.5 bg-white rounded-full top-[3px]
-                  ${darkMode ? 'left-[22px]' : 'left-[4px]'}
-                  transition-all duration-200
-                `}
-              />
-              <button
-                type="button"
-                onClick={toggleDarkMode}
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                aria-label={darkMode ? "Switch to light mode" : "Switch to dark mode"}
-              />
+    <div
+      className={cn("h-full border-r bg-background transition-all duration-300 flex flex-col", isOpen ? "w-64" : "w-0")}
+    >
+      {isOpen && (
+        <>
+          <div className="p-4 border-b">
+            <h1 className="text-xl font-bold flex items-center gap-2">
+              <LayoutDashboard className="h-6 w-6" />
+              <span>Kanban</span>
+            </h1>
+          </div>
+
+          <div className="flex-1 overflow-auto">
+            <div className="p-4">
+              <h2 className="text-sm font-semibold text-muted-foreground mb-4 uppercase tracking-wider">
+                All Boards ({boards.length})
+              </h2>
+
+              <ScrollArea className="h-[calc(100vh-250px)]">
+                <div className="space-y-1">
+                  {boards.map((board) => (
+                    <Button
+                      key={board.id}
+                      variant={activeBoard === board.id ? "secondary" : "ghost"}
+                      className={cn("w-full justify-start", activeBoard === board.id && "font-bold")}
+                      onClick={() => setActiveBoard(board.id)}
+                    >
+                      <LayoutDashboard className="mr-2 h-4 w-4" />
+                      {board.name}
+                    </Button>
+                  ))}
+
+                  <Button variant="ghost" className="w-full justify-start text-primary" onClick={openCreateBoardDialog}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Create New Board
+                  </Button>
+                </div>
+              </ScrollArea>
             </div>
           </div>
-          
-          <Image
-            src="/assets/icon-dark-theme.svg"
-            alt="Dark Theme"
-            width={15}
-            height={15}
-          />
-        </div>
-        
-        <button
-          className="flex items-center text-light-gray hover:text-medium-gray w-full py-2"
+
+          <div className="p-4 border-t">
+            <div className="bg-muted rounded-md p-3 flex items-center justify-between">
+              <Sun className="h-4 w-4" />
+              <Switch
+                checked={theme === "dark"}
+                onCheckedChange={() => setTheme(theme === "dark" ? "light" : "dark")}
+              />
+              <Moon className="h-4 w-4" />
+            </div>
+
+            <Button variant="ghost" className="w-full justify-start mt-4" onClick={toggleSidebar}>
+              <ChevronLeft className="mr-2 h-4 w-4" />
+              Hide Sidebar
+            </Button>
+          </div>
+        </>
+      )}
+
+      {!isOpen && (
+        <Button
+          variant="secondary"
+          size="icon"
+          className="absolute bottom-4 left-4 rounded-full"
           onClick={toggleSidebar}
         >
-          <Image
-            src="/assets/icon-hide-sidebar.svg"
-            alt="Hide Sidebar"
-            width={18}
-            height={16}
-            className="mr-3"
-          />
-          <span>Hide Sidebar</span>
-        </button>
-      </div>
-      
-      {showAddBoardModal && (
-        <AddBoardModal onClose={() => setShowAddBoardModal(false)} />
+          <ChevronRight className="h-4 w-4" />
+        </Button>
       )}
-    </aside>
-  );
-} 
+    </div>
+  )
+}
+
